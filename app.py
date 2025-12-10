@@ -100,7 +100,9 @@ if st.button("Processar Votação"):
                     pivot_df = pivot_df.sort_values(by='Sim', ascending=False)
                     
                     st.info("Selecione com o mouse e copie (Ctrl+C).")
-                    st.table(pivot_df)
+                    
+                    # Renderiza HTML puro sem index
+                    st.markdown(pivot_df.to_html(), unsafe_allow_html=True)
                 else:
                     st.warning("Nenhum dado disponível.")
 
@@ -116,22 +118,6 @@ if st.button("Processar Votação"):
                 )
 
                 if modo_view == "Tabela Simples (Ideal para Copiar)":
-                    st.caption("Esta tabela exibe todos os dados de uma vez. Selecione, copie e cole no Excel.")
-                    # st.table força a renderização de todas as linhas em HTML
-                    st.table(df)
-                else:
-                    st.caption("Use esta tabela para clicar nas colunas e ordenar.")
-                    st.dataframe(df, use_container_width=True, hide_index=True)
-
-                # Download CSV
-                st.markdown("---")
-                csv = df.to_csv(index=False).encode('utf-8-sig')
-                st.download_button(
-                    label="📥 Baixar Planilha (.csv)",
-                    data=csv,
-                    file_name='votacao_camara_deputados.csv',
-                    mime='text/csv',
-                )
-
-    else:
-        st.warning("Por favor, insira uma URL.")
+                    st.caption("Esta tabela exibe todos os dados sem numeração de linha. Selecione, copie e cole.")
+                    # Renderiza HTML puro sem index (index=False)
+                    st.markdown(df.to_html(index=False), unsafe
