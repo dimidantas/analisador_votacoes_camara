@@ -36,7 +36,7 @@ def scrape_voting_data(url):
     for li in items:
         text = li.get_text(" ", strip=True)
 
-        # Captura o voto (tudo depois de "-votou")
+        # Captura o voto
         voto_match = re.search(r"-votou\s+(.+)", text)
         if voto_match:
             voto = voto_match.group(1).strip()
@@ -61,7 +61,6 @@ def scrape_voting_data(url):
     df = pd.DataFrame(rows)
     
     # --- Limpeza de Dados ---
-    # Corrigir nomes de partidos específicos
     df['Partido'] = df['Partido'].replace({
         'Republican': 'Republicanos',
         'Solidaried': 'Solidariedade'
@@ -74,7 +73,7 @@ def scrape_voting_data(url):
 st.set_page_config(page_title="Analisador de Votações", layout="wide")
 
 st.title("🏛️ Analisador de Votações da Câmara")
-st.markdown("Cole o link de uma votação do **Portal da Câmara** para extrair os dados e gerar tabelas.")
+st.markdown("Cole o link de uma votação do **Portal da Câmara** para extrair os dados.")
 
 url_input = st.text_input("Link da Votação:", placeholder="https://www.camara.leg.br/presenca-comissoes/votacao-portal?...")
 
@@ -88,52 +87,46 @@ if st.button("Processar Votação"):
         else:
             st.success(f"**Resultado Oficial:** {res_final}")
 
-            tab1, tab2 = st.tabs(["🗳️ Votos por Deputado", "📊 Resumo por Partido"])
+            tab1, tab2 = st.tabs(["📊 Resumo por Partido (Fácil Cópia)", "🗳️ Votos por Deputado"])
 
+            # --- ABA 1: RESUMO (Prioridade para cópia) ---
             with tab1:
+                st.subheader("Resumo por Partido")
+                if not df.empty:
+                    # Tabela Dinâmica
+                    pivot_df = pd.crosstab(df['Partido'], df['Voto'])
+                    target_cols = ['Sim', 'Não', 'Abstenção', 'Ausente']
+                    pivot_df = pivot_df.reindex(columns=target_cols, fill_value=0)
+                    pivot_df = pivot_df.sort_values(by='Sim', ascending=False)
+                    
+                    st.info("Esta tabela é estática. Basta selecionar com o mouse e copiar (Ctrl+C).")
+                    # st.table gera HTML puro, ideal para copiar
+                    st.table(pivot_df)
+                else:
+                    st.warning("Nenhum dado disponível.")
+
+            # --- ABA 2: LISTA DE DEPUTADOS ---
+            with tab2:
                 st.subheader("Lista de Deputados")
-                st.caption("Dica: Clique no canto superior esquerdo da tabela para selecionar tudo, ou arraste o mouse para selecionar células e use Ctrl+C para copiar.")
                 
-                # data_editor com disabled=True permite copiar células facilmente
-                st.data_editor(
-                    df, 
-                    use_container_width=True, 
-                    hide_index=True, 
-                    disabled=True
-                )
+                # Opção 1: Visualização interativa (boa para ler)
+                st.dataframe(df, use_container_width=True, hide_index=True)
+
+                st.markdown("---")
+                
+                # Opção 2: Tabela estática escondida (boa para copiar)
+                with st.expander("📋 Ver Tabela Estática para Copiar (Clique aqui)"):
+                    st.caption("Esta tabela exibe todos os nomes de uma vez. Selecione e copie.")
+                    st.table(df)
 
                 # Download CSV
                 csv = df.to_csv(index=False).encode('utf-8-sig')
                 st.download_button(
-                    label="Baixar Tabela Completa (CSV)",
+                    label="Baixar CSV Completo",
                     data=csv,
                     file_name='votacao_camara_deputados.csv',
                     mime='text/csv',
                 )
-
-            with tab2:
-                st.subheader("Votos por Partido")
-                if not df.empty:
-                    # Tabela Dinâmica (Pivot)
-                    pivot_df = pd.crosstab(df['Partido'], df['Voto'])
-                    
-                    # Forçar colunas específicas na ordem desejada
-                    target_cols = ['Sim', 'Não', 'Abstenção', 'Ausente']
-                    
-                    # Reindex garante que as colunas existam (preenchendo com 0 se faltar)
-                    pivot_df = pivot_df.reindex(columns=target_cols, fill_value=0)
-                    
-                    # Ordenar por quantidade de votos 'Sim' (opcional)
-                    pivot_df = pivot_df.sort_values(by='Sim', ascending=False)
-                    
-                    st.caption("Selecione as células e use Ctrl+C para copiar.")
-                    st.data_editor(
-                        pivot_df, 
-                        use_container_width=True, 
-                        disabled=True
-                    )
-                else:
-                    st.warning("Nenhum dado disponível para resumo.")
 
     else:
         st.warning("Por favor, insira uma URL.")
