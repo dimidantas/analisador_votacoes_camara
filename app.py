@@ -89,20 +89,30 @@ if st.button("Processar Votação"):
 
             tab1, tab2 = st.tabs(["📊 Resumo por Partido", "🗳️ Lista de Deputados"])
 
-            # --- ABA 1: RESUMO ---
+            # --- ABA 1: RESUMO (MODIFICADO) ---
             with tab1:
                 st.subheader("Resumo por Partido")
                 if not df.empty:
-                    # Tabela Dinâmica
+                    # 1. Calcula a contagem (Crosstab)
                     pivot_df = pd.crosstab(df['Partido'], df['Voto'])
-                    target_cols = ['Sim', 'Não', 'Abstenção', 'Ausente']
+                    
+                    # 2. Define a ordem exata das colunas solicitadas
+                    target_cols = ['Sim', 'Não', 'Ausente', 'Abstenção']
+                    
+                    # 3. Garante que as colunas existam (preenche com 0 se faltar alguma)
                     pivot_df = pivot_df.reindex(columns=target_cols, fill_value=0)
+                    
+                    # 4. Transforma o 'Partido' (que era índice) em uma coluna normal
+                    pivot_df = pivot_df.reset_index()
+                    
+                    # 5. Ordena por 'Sim' (opcional, mas ajuda na visualização)
                     pivot_df = pivot_df.sort_values(by='Sim', ascending=False)
                     
                     st.info("Selecione com o mouse e copie (Ctrl+C).")
                     
-                    # Renderiza HTML puro sem index
-                    st.markdown(pivot_df.to_html(), unsafe_allow_html=True)
+                    # Renderiza HTML puro sem o índice numérico (0, 1, 2...)
+                    # A coluna 'Partido' aparecerá como a primeira coluna normal
+                    st.markdown(pivot_df.to_html(index=False), unsafe_allow_html=True)
                 else:
                     st.warning("Nenhum dado disponível.")
 
@@ -110,7 +120,6 @@ if st.button("Processar Votação"):
             with tab2:
                 st.subheader("Votos Individuais")
                 
-                # Botão para escolher o modo de visualização
                 modo_view = st.radio(
                     "Escolha o formato:",
                     ["Tabela Simples (Ideal para Copiar)", "Tabela Interativa (Filtrar/Ordenar)"],
@@ -119,13 +128,11 @@ if st.button("Processar Votação"):
 
                 if modo_view == "Tabela Simples (Ideal para Copiar)":
                     st.caption("Esta tabela exibe todos os dados sem numeração de linha. Selecione, copie e cole.")
-                    # Renderiza HTML puro sem index (index=False)
                     st.markdown(df.to_html(index=False), unsafe_allow_html=True)
                 else:
                     st.caption("Use esta tabela para clicar nas colunas e ordenar.")
                     st.dataframe(df, use_container_width=True, hide_index=True)
 
-                # Download CSV
                 st.markdown("---")
                 csv = df.to_csv(index=False).encode('utf-8-sig')
                 st.download_button(
