@@ -120,4 +120,20 @@ if st.button("Processar Votação"):
                 if modo_view == "Tabela Simples (Ideal para Copiar)":
                     st.caption("Esta tabela exibe todos os dados sem numeração de linha. Selecione, copie e cole.")
                     # Renderiza HTML puro sem index (index=False)
-                    st.markdown(df.to_html(index=False), unsafe
+                    st.markdown(df.to_html(index=False), unsafe_allow_html=True)
+                else:
+                    st.caption("Use esta tabela para clicar nas colunas e ordenar.")
+                    st.dataframe(df, use_container_width=True, hide_index=True)
+
+                # Download CSV
+                st.markdown("---")
+                csv = df.to_csv(index=False).encode('utf-8-sig')
+                st.download_button(
+                    label="📥 Baixar Planilha (.csv)",
+                    data=csv,
+                    file_name='votacao_camara_deputados.csv',
+                    mime='text/csv',
+                )
+
+    else:
+        st.warning("Por favor, insira uma URL.")
