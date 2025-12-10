@@ -87,9 +87,9 @@ if st.button("Processar Votação"):
         else:
             st.success(f"**Resultado Oficial:** {res_final}")
 
-            tab1, tab2 = st.tabs(["📊 Resumo por Partido (Fácil Cópia)", "🗳️ Votos por Deputado"])
+            tab1, tab2 = st.tabs(["📊 Resumo por Partido", "🗳️ Lista de Deputados"])
 
-            # --- ABA 1: RESUMO (Prioridade para cópia) ---
+            # --- ABA 1: RESUMO ---
             with tab1:
                 st.subheader("Resumo por Partido")
                 if not df.empty:
@@ -99,30 +99,35 @@ if st.button("Processar Votação"):
                     pivot_df = pivot_df.reindex(columns=target_cols, fill_value=0)
                     pivot_df = pivot_df.sort_values(by='Sim', ascending=False)
                     
-                    st.info("Esta tabela é estática. Basta selecionar com o mouse e copiar (Ctrl+C).")
-                    # st.table gera HTML puro, ideal para copiar
+                    st.info("Selecione com o mouse e copie (Ctrl+C).")
                     st.table(pivot_df)
                 else:
                     st.warning("Nenhum dado disponível.")
 
             # --- ABA 2: LISTA DE DEPUTADOS ---
             with tab2:
-                st.subheader("Lista de Deputados")
+                st.subheader("Votos Individuais")
                 
-                # Opção 1: Visualização interativa (boa para ler)
-                st.dataframe(df, use_container_width=True, hide_index=True)
+                # Botão para escolher o modo de visualização
+                modo_view = st.radio(
+                    "Escolha o formato:",
+                    ["Tabela Simples (Ideal para Copiar)", "Tabela Interativa (Filtrar/Ordenar)"],
+                    horizontal=True
+                )
 
-                st.markdown("---")
-                
-                # Opção 2: Tabela estática escondida (boa para copiar)
-                with st.expander("📋 Ver Tabela Estática para Copiar (Clique aqui)"):
-                    st.caption("Esta tabela exibe todos os nomes de uma vez. Selecione e copie.")
+                if modo_view == "Tabela Simples (Ideal para Copiar)":
+                    st.caption("Esta tabela exibe todos os dados de uma vez. Selecione, copie e cole no Excel.")
+                    # st.table força a renderização de todas as linhas em HTML
                     st.table(df)
+                else:
+                    st.caption("Use esta tabela para clicar nas colunas e ordenar.")
+                    st.dataframe(df, use_container_width=True, hide_index=True)
 
                 # Download CSV
+                st.markdown("---")
                 csv = df.to_csv(index=False).encode('utf-8-sig')
                 st.download_button(
-                    label="Baixar CSV Completo",
+                    label="📥 Baixar Planilha (.csv)",
                     data=csv,
                     file_name='votacao_camara_deputados.csv',
                     mime='text/csv',
